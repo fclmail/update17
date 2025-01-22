@@ -1,0 +1,141 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>ERC20 Token Trader with Enhanced Wallet Connections</title>  
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js" type="text/javascript"></script>  
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>  
+    <script src="https://unpkg.com/@walletconnect/web3-provider/dist/umd/index.min.js"></script>  
+    <style>  
+        body { font-family: Arial, sans-serif; margin: 20px; }  
+        button { margin: 5px; padding: 10px; font-size: 16px; }  
+        input { margin: 5px; padding: 10px; font-size: 14px; }  
+        #status, #address { margin-top: 20px; font-weight: bold; }  
+    </style>  
+</head>  
+<body>  
+    <h1>ERC20 Token Trader with Enhanced Wallet Connections</h1>  
+
+    <!-- Wallet Connection Buttons -->  
+    <button id="connectMetaMask">Connect MetaMask (Browser)</button>  
+    <button id="connectMetaMaskMobile">Connect MetaMask (Mobile App)</button>  
+    <button id="connectWalletConnect">Connect WalletConnect</button>  
+    <button id="connectMetaMaskAlternate1">Connect MetaMask Alternate 1</button>  
+    <button id="connectMetaMaskAlternate2">Connect MetaMask Alternate 2</button>  
+    <button id="connectMetaMaskAlternate3">Connect MetaMask Alternate 3</button>  
+
+    <div id="address"></div>  
+
+    <!-- Token Trading Section -->  
+    <div>  
+        <label for="tokenAddress">Token Address:</label>  
+        <input type="text" id="tokenAddress" value="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" />  
+    </div>  
+    <div>  
+        <label for="buyPrice">Buy Price (USD):</label>  
+        <input type="number" id="buyPrice" step="0.01" />  
+    </div>  
+    <div>  
+        <label for="sellPrice">Sell Price (USD):</label>  
+        <input type="number" id="sellPrice" step="0.01" />  
+    </div>  
+    <div>  
+        <button id="startButton">Start Trading</button>  
+        <button id="stopButton">Stop Trading</button>  
+    </div>  
+    <div id="status"></div>  
+
+    <script>  
+        let provider, signer, tokenContract, trading = false;  
+
+        const addressDiv = document.getElementById('address');  
+
+        // Function to connect MetaMask  
+        async function connectToMetaMask() {  
+            if (typeof window.ethereum !== 'undefined') {  
+                try {  
+                    provider = new ethers.providers.Web3Provider(window.ethereum);  
+                    await provider.send("eth_requestAccounts", []);  
+                    signer = provider.getSigner();  
+                    const address = await signer.getAddress();  
+                    addressDiv.innerText = 'Connected Address: ' + address;  
+                } catch (error) {  
+                    console.error('User denied account access:', error);  
+                    addressDiv.innerText = 'Connection failed. Please try again.';  
+                }  
+            } else {  
+                addressDiv.innerText = 'Please install MetaMask!';  
+            }  
+        }  
+
+        // Function to connect WalletConnect  
+        async function connectToWalletConnect() {  
+            const walletConnectProvider = new WalletConnectProvider.default({  
+                infuraId: "YOUR_INFURA_ID", // Replace with your Infura ID  
+            });  
+
+            try {  
+                await walletConnectProvider.enable();  
+                provider = new ethers.providers.Web3Provider(walletConnectProvider);  
+                signer = provider.getSigner();  
+                const address = await signer.getAddress();  
+                addressDiv.innerText = 'Connected Address: ' + address;  
+            } catch (error) {  
+                console.error('WalletConnect connection failed:', error);  
+                addressDiv.innerText = 'Connection failed. Please try again.';  
+            }  
+        }  
+
+        // Button event listeners
+        document.getElementById('connectMetaMask').addEventListener('click', connectToMetaMask);  
+        document.getElementById('connectMetaMaskMobile').addEventListener('click', connectToMetaMask);  
+        document.getElementById('connectWalletConnect').addEventListener('click', connectToWalletConnect);  
+        document.getElementById('connectMetaMaskAlternate1').addEventListener('click', connectToMetaMask);  
+        document.getElementById('connectMetaMaskAlternate2').addEventListener('click', connectToMetaMask);  
+        document.getElementById('connectMetaMaskAlternate3').addEventListener('click', connectToMetaMask);  
+
+        // Start Trading  
+        document.getElementById("startButton").onclick = async () => {  
+            const tokenAddress = document.getElementById("tokenAddress").value;  
+            const buyPriceUSD = parseFloat(document.getElementById("buyPrice").value);  
+            const sellPriceUSD = parseFloat(document.getElementById("sellPrice").value);  
+
+            if (!tokenAddress || isNaN(buyPriceUSD) || isNaN(sellPriceUSD) || !provider) {  
+                alert("Please fill in all fields and connect your wallet");  
+                return;  
+            }  
+
+            trading = true;  
+            tokenContract = new ethers.Contract(  
+                tokenAddress,  
+                [  
+                    "function balanceOf(address owner) view returns (uint256)",  
+                    "function transfer(address to, uint256 amount) returns (bool)",  
+                ],  
+                signer  
+            );  
+
+            document.getElementById("status").innerText = "Trading started";  
+
+            while (trading) {  
+                const currentPriceUSD = Math.random() * 2; // Simulate price for demo  
+
+                if (currentPriceUSD <= buyPriceUSD) {  
+                    console.log(`Buying at $${currentPriceUSD}`);  
+                } else if (currentPriceUSD >= sellPriceUSD) {  
+                    console.log(`Selling at $${currentPriceUSD}`);  
+                }  
+
+                await new Promise((resolve) => setTimeout(resolve, 5000));  
+            }  
+        };  
+
+        // Stop Trading  
+        document.getElementById("stopButton").onclick = () => {  
+            trading = false;  
+            document.getElementById("status").innerText = "Trading stopped";  
+        };  
+    </script>  
+</body>  
+</html>
